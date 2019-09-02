@@ -2,6 +2,8 @@ import unittest
 
 from redlock import Redlock, MultipleRedlockException
 
+TEST_LOCK_TTL_MILLIS = 1000  # Milliseconds
+
 
 class TestRedlock(unittest.TestCase):
 
@@ -9,16 +11,20 @@ class TestRedlock(unittest.TestCase):
         self.redlock = Redlock([{"host": "localhost"}])
 
     def test_lock(self):
-        lock = self.redlock.lock("pants", 100)
-        self.assertEqual(lock.resource, "pants")
+        lock_name = "test_lock"
+        lock = self.redlock.lock(lock_name, 100, TEST_LOCK_TTL_MILLIS)
+        self.assertEqual(lock.resource, lock_name)
         self.redlock.unlock(lock)
-        lock = self.redlock.lock("pants", 10)
+        lock = self.redlock.lock(lock_name, 10, TEST_LOCK_TTL_MILLIS)
         self.redlock.unlock(lock)
 
     def test_blocked(self):
-        lock = self.redlock.lock("pants", 1000)
-        bad = self.redlock.lock("pants", 10)
-        self.assertFalse(bad)
+        lock_name = "test_blocked"
+        lock = self.redlock.lock(lock_name, 1000, TEST_LOCK_TTL_MILLIS)
+
+        with self.assertRaises(MultipleRedlockException):
+            self.redlock.lock(lock_name, 10, TEST_LOCK_TTL_MILLIS)
+
         self.redlock.unlock(lock)
 
     def test_bad_connection_info(self):
@@ -26,13 +32,15 @@ class TestRedlock(unittest.TestCase):
             Redlock([{"cat": "hog"}])
 
     def test_py3_compatible_encoding(self):
-        lock = self.redlock.lock("pants", 1000)
-        key = self.redlock.servers[0].get("pants")
-        self.assertEquals(lock.key, key)
+        lock_name = "test_py3_compatible_encoding"
+        lock = self.redlock.lock(lock_name, 1000, TEST_LOCK_TTL_MILLIS)
+        key = self.redlock.servers[0].get(lock_name)
+        self.assertEqual(lock.key, int(key))
 
     def test_ttl_not_int_trigger_exception_value_error(self):
+        lock_name = "ttl_not_int"
         with self.assertRaises(ValueError):
-            self.redlock.lock("pants", 1000.0)
+            self.redlock.lock(lock_name, 1000.0, 1000.0)
 
     def test_multiple_redlock_exception(self):
         ex1 = Exception("Redis connection error")

@@ -1,7 +1,5 @@
 import logging
-import string
 import textwrap
-import random
 import time
 import uuid
 from collections import namedtuple
@@ -36,8 +34,10 @@ class MultipleRedlockException(Exception):
     def __repr__(self):
         return self.__str__()
 
+
 def get_unique_id():
-    return uuid.uuid4().get_hex()
+    return uuid.uuid4().hex
+
 
 class Redlock(object):
     clock_drift_factor = 0.01
@@ -87,11 +87,10 @@ class Redlock(object):
     def unlock_instance(self, server, resource, val):
         try:
             result = server.eval(self.unlock_script, 1, resource, val)
-        except Exception as e:
+        except Exception:
             logging.exception("Error unlocking resource %s in server %s", resource, str(server))
 
         return result
-
 
     def lock(self, resource, value, ttl, force=False):
         # Add 2 milliseconds to the drift to account for Redis expires
@@ -102,6 +101,7 @@ class Redlock(object):
         redis_errors = list()
         n = 0
         start_time = int(time.time() * 1000)
+
         del redis_errors[:]
         for server in self.servers:
             try:
@@ -110,7 +110,9 @@ class Redlock(object):
             except RedisError as e:
                 redis_errors.append(e)
         elapsed_time = int(time.time() * 1000) - start_time
+
         validity = int(ttl - elapsed_time - drift)
+
         if validity > 0 and n >= self.quorum:
             return Lock(validity, resource, value)
         else:
