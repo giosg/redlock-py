@@ -35,9 +35,7 @@ class TestRedlock(unittest.TestCase):
         lock_name = "test_py3_compatible_encoding"
         lock = self.redlock.lock(lock_name, 1000, TEST_LOCK_TTL_MILLIS)
         key = self.redlock.servers[0].get(lock_name)
-        print("lock.key", lock.key)
-        print("key", key)
-        self.assertEqual(lock.key, key)
+        self.assertEqual(lock.key, int(key))
 
     def test_ttl_not_int_trigger_exception_value_error(self):
         lock_name = "ttl_not_int"

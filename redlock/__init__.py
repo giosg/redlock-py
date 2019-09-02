@@ -80,7 +80,6 @@ class Redlock(object):
         except AssertionError as e:
             raise ValueError(str(e))
         if force:
-            print("val", val)
             return server.set(resource, val, px=ttl)
         else:
             return server.eval(self.lock_script, 1, resource, val, ttl)
