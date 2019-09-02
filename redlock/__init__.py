@@ -36,8 +36,10 @@ class MultipleRedlockException(Exception):
     def __repr__(self):
         return self.__str__()
 
+
 def get_unique_id():
-    return uuid.uuid4().get_hex()
+    return uuid.uuid4().hex
+
 
 class Redlock(object):
     clock_drift_factor = 0.01
@@ -91,7 +93,6 @@ class Redlock(object):
             logging.exception("Error unlocking resource %s in server %s", resource, str(server))
 
         return result
-
 
     def lock(self, resource, value, ttl, force=False):
         # Add 2 milliseconds to the drift to account for Redis expires
